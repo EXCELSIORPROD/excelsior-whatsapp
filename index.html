@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>EXCELSIOR PROD – Connexion WhatsApp Business</title>
+  <style>
+    :root { color-scheme: light; }
+    body{
+      margin:0; min-height:100vh; display:grid; place-items:center;
+      font-family:Arial,Helvetica,sans-serif; background:#f5f6f7; color:#1f2328;
+    }
+    .card{
+      width:min(680px,calc(100% - 32px)); background:#fff; border-radius:18px;
+      box-shadow:0 12px 35px rgba(0,0,0,.12); padding:34px; text-align:center;
+    }
+    h1{margin:0 0 10px;font-size:30px}
+    p{line-height:1.5;color:#4b5563}
+    button{
+      border:0;border-radius:10px;background:#25D366;color:#fff;font-size:18px;
+      font-weight:700;padding:15px 24px;cursor:pointer
+    }
+    button:hover{filter:brightness(.95)}
+    #status{
+      margin-top:20px;padding:12px;border-radius:10px;background:#f1f3f5;
+      text-align:left;white-space:pre-wrap;font-size:14px;min-height:20px
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Connexion WhatsApp Business</h1>
+    <p>Connectez le numéro WhatsApp Business d’EXCELSIOR PROD à la plateforme Meta.</p>
+    <button type="button" onclick="launchWhatsAppSignup()">Connecter WhatsApp Business</button>
+    <div id="status">Prêt pour la connexion.</div>
+  </main>
+
+  <script>
+    const APP_ID = '1609361424180015';
+    const CONFIG_ID = '1868981247597743';
+
+    const setStatus = (message) => {
+      document.getElementById('status').textContent = message;
+    };
+
+    window.addEventListener('message', (event) => {
+      if (!event.origin || !event.origin.endsWith('facebook.com')) return;
+
+      let data;
+      try {
+        data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      } catch (_) {
+        return;
+      }
+
+      if (!data || data.type !== 'WA_EMBEDDED_SIGNUP') return;
+
+      console.log('WA_EMBEDDED_SIGNUP:', data);
+
+      if (data.event === 'FINISH' || data.event === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING') {
+        const details = data.data || {};
+        setStatus(
+          'Connexion WhatsApp terminée.\n' +
+          (details.waba_id ? 'WABA ID : ' + details.waba_id + '\n' : '') +
+          (details.phone_number_id ? 'Phone Number ID : ' + details.phone_number_id : '')
+        );
+      } else if (data.event === 'CANCEL') {
+        setStatus('Connexion annulée.');
+      } else if (data.event === 'ERROR') {
+        setStatus('Meta a signalé une erreur pendant la connexion. Consultez la console du navigateur pour le détail.');
+      }
+    });
+
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId: APP_ID,
+        autoLogAppEvents: true,
+        xfbml: true,
+        version: 'v26.0'
+      });
+      setStatus('SDK Meta chargé. Vous pouvez lancer la connexion.');
+    };
+
+    function fbLoginCallback(response) {
+      if (response && response.authResponse && response.authResponse.code) {
+        console.log('Embedded Signup authorization code:', response.authResponse.code);
+        setStatus('Autorisation Meta reçue. Finalisez les étapes WhatsApp dans la fenêtre Meta.');
+      } else {
+        console.log('Embedded Signup response:', response);
+        setStatus('La connexion n’a pas été finalisée.');
+      }
+    }
+
+    function launchWhatsAppSignup() {
+      if (typeof FB === 'undefined') {
+        setStatus('Le SDK Meta n’est pas encore chargé. Rechargez la page puis réessayez.');
+        return;
+      }
+
+      setStatus('Ouverture de la connexion Meta…');
+
+      FB.login(fbLoginCallback, {
+        config_id: CONFIG_ID,
+        response_type: 'code',
+        override_default_response_type: true,
+        extras: {
+          setup: {}
+        }
+      });
+    }
+  </script>
+
+  <script async defer crossorigin="anonymous"
+          src="https://connect.facebook.net/fr_FR/sdk.js"></script>
+</body>
+</html>
